@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSSCO Academic Results & Performance Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2 cursor-pointer" onclick="showView('landingView')">
+        <span class="text-2xl">🎓</span>
+        <div>
+          <h1 class="text-lg font-bold leading-tight">NSSCO Academic Portal</h1>
+          <p class="text-[10px] text-emerald-400 font-medium">Performance Tracking & Analytics System</p>
+        </div>
+      </div>
+      <div id="navLinks" class="flex gap-2 items-center text-xs font-semibold">
+        <button onclick="showView('studentView')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition">Student Portal</button>
+        <button onclick="showView('leaderboardView')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition">🏆 Leaderboard</button>
+        <button onclick="showView('calendarView')" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition">📅 Calendar</button>
+        <button id="adminNavBtn" onclick="handleAdminNav()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg transition text-white">Admin Dashboard</button>
+        <button id="logoutBtn" onclick="logoutAdmin()" class="hidden px-3 py-2 bg-red-600 hover:bg-red-500 rounded-lg transition text-white">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+    <section id="landingView" class="space-y-8 py-6">
+      <div class="bg-gradient-to-r from-slate-900 to-emerald-900 text-white rounded-3xl p-8 md:p-12 shadow-xl text-center space-y-4">
+        <h2 class="text-3xl md:text-5xl font-black tracking-tight" id="heroTitle">Excellence in NSSCO Academic Tracking</h2>
+        <p class="text-slate-300 max-w-2xl mx-auto text-sm md:text-base" id="heroSubtitle">View individual academic reports, track overall class leaderboards, and count down to key examination milestones.</p>
+        <div class="flex justify-center gap-4 pt-4">
+          <button onclick="showView('studentView')" class="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition">Student Login & Lookup</button>
+          <button onclick="showView('leaderboardView')" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 font-bold rounded-xl shadow-lg transition">View Leaderboard</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+          <span class="text-xs uppercase font-bold text-emerald-600 tracking-wider">Next Major Milestone</span>
+          <h3 id="nextEventName" class="text-xl font-bold text-slate-900">Loading exam schedule...</h3>
+        </div>
+        <div class="flex gap-3 text-center" id="countdownTimer">
+          <div class="bg-slate-900 text-white p-3 rounded-xl min-w-[65px]"><span id="cdDays" class="text-xl font-black block">0</span><span class="text-[9px] uppercase text-slate-400">Days</span></div>
+          <div class="bg-slate-900 text-white p-3 rounded-xl min-w-[65px]"><span id="cdHours" class="text-xl font-black block">0</span><span class="text-[9px] uppercase text-slate-400">Hours</span></div>
+          <div class="bg-slate-900 text-white p-3 rounded-xl min-w-[65px]"><span id="cdMins" class="text-xl font-black block">0</span><span class="text-[9px] uppercase text-slate-400">Mins</span></div>
+          <div class="bg-slate-900 text-white p-3 rounded-xl min-w-[65px]"><span id="cdSecs" class="text-xl font-black block">0</span><span class="text-[9px] uppercase text-slate-400">Secs</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="studentView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto">
+        <h2 class="text-lg font-bold mb-3 text-slate-900 text-center">Student Results Portal</h2>
+        <div class="space-y-3">
+          <input type="text" id="studentIdInput" placeholder="Enter Student ID (e.g. STU101)" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          <button onclick="fetchStudentResults()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-semibold py-2 rounded-lg text-sm transition">Fetch Report</button>
+        </div>
+      </div>
+
+      <div id="studentResultsContainer" class="hidden space-y-4">
+        <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div>
+            <h3 id="studentHeader" class="text-xl font-bold text-slate-900">Student Academic Summary</h3>
+            <p id="studentOverallRank" class="text-xs font-semibold text-emerald-600 mt-0.5">Calculating rank...</p>
+          </div>
+          <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition">📥 Export CSV Report</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <table class="w-full text-left border-collapse" id="resultsTable">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="py-3 px-4">Subject</th>
+                <th class="py-3 px-4">Test 1</th>
+                <th class="py-3 px-4">Test 2</th>
+                <th class="py-3 px-4">Test 3</th>
+                <th class="py-3 px-4">Mock</th>
+                <th class="py-3 px-4">Current Average</th>
+                <th class="py-3 px-4">Symbol</th>
+              </tr>
+            </thead>
+            <tbody id="studentResultsBody" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="leaderboardView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xl font-bold mb-4 text-slate-900">⭐ Top Subject Performers (Best in Subject)</h2>
+        <div id="subjectChampionsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <p class="text-slate-400 text-sm col-span-full">Loading subject champions...</p>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xl font-bold mb-4 text-slate-900">🏆 Overall Student Leaderboard</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="py-3 px-4">Rank</th>
+                <th class="py-3 px-4">Student ID</th>
+                <th class="py-3 px-4">Student Name</th>
+                <th class="py-3 px-4">Subjects Recorded</th>
+                <th class="py-3 px-4">Overall Average</th>
+                <th class="py-3 px-4">Overall Symbol</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="calendarView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-xl font-bold mb-4 text-slate-900">📅 Upcoming Tests & Examination Calendar</h2>
+        <div id="calendarList" class="space-y-3">
+          <p class="text-slate-400 text-sm">Loading exam calendar...</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminLoginView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-sm mx-auto">
+        <h2 class="text-lg font-bold mb-1 text-slate-900 text-center">🔒 Admin Portal</h2>
+        <form onsubmit="loginAdmin(event)" class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Email</label>
+            <input type="email" id="adminEmail" required class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="admin@school.com" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Password</label>
+            <input type="password" id="adminPassword" required class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-lg text-sm transition">Login</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="adminDashboardView" class="hidden space-y-8">
+      
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-lg font-bold mb-2 text-slate-900">📝 Enter or Update Student Marks</h2>
+        <p class="text-xs text-slate-500 mb-4">Note: Marks fields are optional. Leave future test fields blank if they haven't been written yet.</p>
+        
+        <form id="marksForm" onsubmit="saveMarks(event)" class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Student ID *</label>
+              <input type="text" id="tStudentId" required placeholder="STU101" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Student Name *</label>
+              <input type="text" id="tStudentName" required placeholder="John Doe" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Subject *</label>
+              <select id="tSubject" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                <option>Mathematics</option>
+                <option>English Language</option>
+                <option>Biology</option>
+                <option>Physics</option>
+                <option>Chemistry</option>
+                <option>Computer Science</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 1 (%) <span class="text-slate-400 font-normal">(Optional)</span></label>
+              <input type="number" id="t1" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 75" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 2 (%) <span class="text-slate-400 font-normal">(Optional)</span></label>
+              <input type="number" id="t2" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 80" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 3 (%) <span class="text-slate-400 font-normal">(Optional)</span></label>
+              <input type="number" id="t3" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 68" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Mock Exam (%) <span class="text-slate-400 font-normal">(Optional)</span></label>
+              <input type="number" id="tMock" min="0" max="100" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="e.g. 82" />
+            </div>
+          </div>
+
+          <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white font-medium px-6 py-2 rounded-lg text-sm transition">💾 Save Marks to Database</button>
+        </form>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-lg font-bold mb-4 text-slate-900">📅 Add Calendar Event / Test Milestone</h2>
+        <form id="eventForm" onsubmit="addCalendarEvent(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Event Title</label>
+            <input type="text" id="evTitle" required placeholder="e.g. Physics Mock Exam" class="w-full px-3 py-2 border rounded-lg text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Event Date & Time</label>
+            <input type="datetime-local" id="evDate" required class="w-full px-3 py-2 border rounded-lg text-sm" />
+          </div>
+          <div class="flex items-end">
+            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-2 rounded-lg text-sm transition">Add Event</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-lg font-bold mb-4 text-slate-900">⚙️ Customize & Upgrade Portal Content</h2>
+        <form onsubmit="updateSiteSettings(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold mb-1">Hero Title</label>
+            <input type="text" id="cfgTitle" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="Excellence in NSSCO Academic Tracking" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold mb-1">Hero Subtitle Announcement</label>
+            <textarea id="cfgSubtitle" rows="2" class="w-full px-3 py-2 border rounded-lg text-sm" placeholder="View individual academic reports, track overall class leaderboards..."></textarea>
+          </div>
+          <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-6 py-2 rounded-lg text-sm transition">Update Site Content</button>
+        </form>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+    // 1. REPLACE WITH YOUR FIREBASE CONFIGURATION
+    const firebaseConfig = {
+     apiKey: "AIzaSyBYNcXsEVCSzCWQ3hVuXv5rIx2bo5uXsnA",
+  authDomain: "nssco-tracker.firebaseapp.com",
+  projectId: "nssco-tracker",
+  storageBucket: "nssco-tracker.firebasestorage.app",
+  messagingSenderId: "499531690070",
+  appId: "1:499531690070:web:bc956ffdbbc989f29e0bf7",
+  measurementId: "G-W0HFVRJNFT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let currentAdmin = null;
+    let allMarksCache = [];
+
+    // Initialize Site
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSiteSettings();
+      loadCalendarEvents();
+      loadAllMarksData();
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      currentAdmin = user;
+      if (user) {
+        document.getElementById('adminNavBtn').innerText = 'Admin Dashboard';
+        document.getElementById('logoutBtn').classList.remove('hidden');
+      } else {
+        document.getElementById('adminNavBtn').innerText = 'Admin Login';
+        document.getElementById('logoutBtn').classList.add('hidden');
+      }
+    });
+
+    // Helper: Grade symbol calculation
+    function getSymbol(avg) {
+      if (avg === null || isNaN(avg)) return { sym: '-', cls: 'bg-slate-100 text-slate-600' };
+      if (avg >= 80) return { sym: 'A*', cls: 'bg-emerald-100 text-emerald-800' };
+      if (avg >= 70) return { sym: 'A', cls: 'bg-emerald-100 text-emerald-800' };
+      if (avg >= 60) return { sym: 'B', cls: 'bg-blue-100 text-blue-800' };
+      if (avg >= 50) return { sym: 'C', cls: 'bg-indigo-100 text-indigo-800' };
+      if (avg >= 40) return { sym: 'D', cls: 'bg-amber-100 text-amber-800' };
+      if (avg >= 30) return { sym: 'E', cls: 'bg-orange-100 text-orange-800' };
+      return { sym: 'U', cls: 'bg-red-100 text-red-800' };
+    }
+
+    // Helper: Flexible Average Calculation (Ignores blank tests)
+    function calcAverage(t1, t2, t3, mock) {
+      let scores = [];
+      if (t1 !== null && t1 !== '') scores.push(Number(t1));
+      if (t2 !== null && t2 !== '') scores.push(Number(t2));
+      if (t3 !== null && t3 !== '') scores.push(Number(t3));
+      if (mock !== null && mock !== '') scores.push(Number(mock));
+      
+      if (scores.length === 0) return null;
+      let sum = scores.reduce((a, b) => a + b, 0);
+      return Number((sum / scores.length).toFixed(2));
+    }
+
+    // Save Marks to Database
+    window.saveMarks = async function(e) {
+      e.preventDefault();
+      if (!auth.currentUser) return alert("Only logged in admins can save marks.");
+
+      const studentId = document.getElementById('tStudentId').value.trim().toUpperCase();
+      const studentName = document.getElementById('tStudentName').value.trim();
+      const subject = document.getElementById('tSubject').value;
+      
+      const t1 = document.getElementById('t1').value !== '' ? Number(document.getElementById('t1').value) : null;
+      const t2 = document.getElementById('t2').value !== '' ? Number(document.getElementById('t2').value) : null;
+      const t3 = document.getElementById('t3').value !== '' ? Number(document.getElementById('t3').value) : null;
+      const mock = document.getElementById('tMock').value !== '' ? Number(document.getElementById('tMock').value) : null;
+
+      const avg = calcAverage(t1, t2, t3, mock);
+      const docId = `${studentId}_${subject.replace(/\s+/g, '')}`;
+
+      try {
+        await setDoc(doc(db, "marks", docId), {
+          studentId, studentName, subject, t1, t2, t3, mock, avg
+        });
+        alert(`Successfully saved marks for ${studentName} (${subject})`);
+        document.getElementById('marksForm').reset();
+        loadAllMarksData();
+      } catch (err) {
+        alert("Error saving marks: " + err.message);
+      }
+    };
+
+    // Load All Marks for Leaderboard & Subject Champions
+    async function loadAllMarksData() {
+      const querySnapshot = await getDocs(collection(db, "marks"));
+      allMarksCache = [];
+      querySnapshot.forEach(docSnap => allMarksCache.push(docSnap.data()));
+      renderLeaderboard();
+      renderSubjectChampions();
+    }
+
+    // Render Overall Student Leaderboard
+    function renderLeaderboard() {
+      const studentMap = {};
+
+      allMarksCache.forEach(m => {
+        if (!studentMap[m.studentId]) {
+          studentMap[m.studentId] = { id: m.studentId, name: m.studentName, totalAvg: 0, count: 0 };
+        }
+        if (m.avg !== null) {
+          studentMap[m.studentId].totalAvg += m.avg;
+          studentMap[m.studentId].count += 1;
+        }
+      });
+
+      const leaderboard = Object.values(studentMap).map(s => ({
+        ...s,
+        overallAvg: s.count > 0 ? Number((s.totalAvg / s.count).toFixed(2)) : 0
+      })).sort((a, b) => b.overallAvg - a.overallAvg);
+
+      const tbody = document.getElementById('leaderboardBody');
+      tbody.innerHTML = '';
+
+      leaderboard.forEach((st, idx) => {
+        const sym = getSymbol(st.overallAvg);
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-emerald-700">#${idx + 1}</td>
+            <td class="py-3 px-4 font-semibold">${st.id}</td>
+            <td class="py-3 px-4">${st.name}</td>
+            <td class="py-3 px-4">${st.count} Subjects</td>
+            <td class="py-3 px-4 font-bold">${st.overallAvg}%</td>
+            <td class="py-3 px-4"><span class="${sym.cls} font-bold px-2 py-0.5 rounded text-xs">${sym.sym}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    // Render "Best in Subject" Champions
+    function renderSubjectChampions() {
+      const subjects = ["Mathematics", "English Language", "Biology", "Physics", "Chemistry", "Computer Science"];
+      const grid = document.getElementById('subjectChampionsGrid');
+      grid.innerHTML = '';
+
+      subjects.forEach(sub => {
+        const subMarks = allMarksCache.filter(m => m.subject === sub && m.avg !== null)
+                                      .sort((a, b) => b.avg - a.avg);
+        const top = subMarks[0];
+
+        grid.innerHTML += `
+          <div class="border border-slate-200 p-4 rounded-xl bg-slate-50 flex flex-col justify-between">
+            <div>
+              <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">${sub}</span>
+              <h4 class="font-bold text-slate-900 mt-1">${top ? top.studentName : 'No records yet'}</h4>
+              <p class="text-xs text-slate-500">${top ? `ID: ${top.studentId}` : '-'}</p>
+            </div>
+            <div class="mt-3 pt-2 border-t border-slate-200 flex justify-between items-center">
+              <span class="text-xs font-semibold">Highest Score:</span>
+              <span class="text-sm font-black text-emerald-700">${top ? top.avg + '%' : '-'}</span>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // Fetch Individual Student Report
+    window.fetchStudentResults = async function() {
+      const studentId = document.getElementById('studentIdInput').value.trim().toUpperCase();
+      if (!studentId) return alert("Enter a Student ID");
+
+      const q = query(collection(db, "marks"), where("studentId", "==", studentId));
+      const querySnapshot = await getDocs(q);
+
+      const tbody = document.getElementById('studentResultsBody');
+      tbody.innerHTML = '';
+
+      if (querySnapshot.empty) return alert("No results found for ID: " + studentId);
+
+      document.getElementById('studentResultsContainer').classList.remove('hidden');
+
+      querySnapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        const sym = getSymbol(d.avg);
+        document.getElementById('studentHeader').innerText = `Academic Summary: ${d.studentName} (${d.studentId})`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-semibold text-slate-900">${d.subject}</td>
+            <td class="py-3 px-4">${d.t1 !== null ? d.t1 + '%' : '-'}</td>
+            <td class="py-3 px-4">${d.t2 !== null ? d.t2 + '%' : '-'}</td>
+            <td class="py-3 px-4">${d.t3 !== null ? d.t3 + '%' : '-'}</td>
+            <td class="py-3 px-4">${d.mock !== null ? d.mock + '%' : '-'}</td>
+            <td class="py-3 px-4 font-bold text-slate-800">${d.avg !== null ? d.avg + '%' : 'Pending'}</td>
+            <td class="py-3 px-4"><span class="${sym.cls} font-bold px-2.5 py-0.5 rounded text-xs">${sym.sym}</span></td>
+          </tr>
+        `;
+      });
+    };
+
+    // Calendar & Countdown
+    async function loadCalendarEvents() {
+      const q = collection(db, "calendar");
+      const snap = await getDocs(q);
+      const list = document.getElementById('calendarList');
+      list.innerHTML = '';
+
+      let events = [];
+      snap.forEach(d => events.push(d.data()));
+      events.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      if (events.length === 0) {
+        list.innerHTML = '<p class="text-slate-400 text-sm">No exam events currently scheduled.</p>';
+        return;
+      }
+
+      // Next Event Countdown
+      const now = new Date();
+      const upcoming = events.find(e => new Date(e.date) > now);
+
+      if (upcoming) {
+        document.getElementById('nextEventName').innerText = upcoming.title;
+        startCountdown(new Date(upcoming.date));
+      }
+
+      events.forEach(e => {
+        list.innerHTML += `
+          <div class="flex justify-between items-center p-3 border rounded-xl bg-slate-50">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900">${e.title}</h4>
+              <p class="text-xs text-slate-500">${new Date(e.date).toLocaleString()}</p>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function startCountdown(targetDate) {
+      setInterval(() => {
+        const diff = targetDate - new Date();
+        if (diff <= 0) return;
+        document.getElementById('cdDays').innerText = Math.floor(diff / (1000 * 60 * 60 * 24));
+        document.getElementById('cdHours').innerText = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        document.getElementById('cdMins').innerText = Math.floor((diff / 1000 / 60) % 60);
+        document.getElementById('cdSecs').innerText = Math.floor((diff / 1000) % 60);
+      }, 1000);
+    }
+
+    window.addCalendarEvent = async function(e) {
+      e.preventDefault();
+      if (!auth.currentUser) return alert("Only admins can add events.");
+      const title = document.getElementById('evTitle').value;
+      const date = document.getElementById('evDate').value;
+
+      await setDoc(doc(db, "calendar", Date.now().toString()), { title, date });
+      alert("Calendar event added.");
+      loadCalendarEvents();
+    };
+
+    // Site Content Customization/Upgrades
+    window.updateSiteSettings = async function(e) {
+      e.preventDefault();
+      if (!auth.currentUser) return alert("Only admins can update site content.");
+      const heroTitle = document.getElementById('cfgTitle').value;
+      const heroSubtitle = document.getElementById('cfgSubtitle').value;
+
+      await setDoc(doc(db, "settings", "general"), { heroTitle, heroSubtitle });
+      alert("Site settings updated!");
+      loadSiteSettings();
+    };
+
+    async function loadSiteSettings() {
+      const snap = await getDoc(doc(db, "settings", "general"));
+      if (snap.exists()) {
+        const d = snap.data();
+        if (d.heroTitle) document.getElementById('heroTitle').innerText = d.heroTitle;
+        if (d.heroSubtitle) document.getElementById('heroSubtitle').innerText = d.heroSubtitle;
+      }
+    }
+
+    // Auth & Navigation helpers
+    window.handleAdminNav = () => currentAdmin ? showView('adminDashboardView') : showView('adminLoginView');
+    window.loginAdmin = async (e) => {
+      e.preventDefault();
+      try {
+        await signInWithEmailAndPassword(auth, document.getElementById('adminEmail').value, document.getElementById('adminPassword').value);
+        showView('adminDashboardView');
+      } catch (err) { alert("Login failed: " + err.message); }
+    };
+    window.logoutAdmin = async () => { await signOut(auth); showView('landingView'); };
+
+    window.showView = function(viewId) {
+      ['landingView', 'studentView', 'leaderboardView', 'calendarView', 'adminLoginView', 'adminDashboardView'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(viewId).classList.remove('hidden');
+    };
+
+    window.exportCSV = function() {
+      let csv = [];
+      let rows = document.querySelectorAll("#resultsTable tr");
+      for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.trim() + '"');
+        csv.push(row.join(","));
+      }
+      let csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+      let link = document.createElement("a");
+      link.download = `Student_Academic_Report.csv`;
+      link.href = window.URL.createObjectURL(csvFile);
+      link.click();
+    };
+  </script>
+</body>
+</html>
