@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSSCO Academic Results Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+  <header class="bg-emerald-800 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div>
+        <h1 class="text-xl font-bold tracking-tight">🎓 NSSCO Academic Portal</h1>
+        <p class="text-xs text-emerald-200">Results Tracking & Grade Engine</p>
+      </div>
+      <div id="navRight" class="flex gap-2">
+        <button onclick="showView('studentView')" class="px-3 py-1.5 text-xs bg-emerald-700 hover:bg-emerald-600 rounded font-medium transition">Student Portal</button>
+        <button onclick="showView('teacherView')" class="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 rounded font-medium transition">Teacher Access</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-8">
+
+    <section id="studentView" class="space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-md mx-auto">
+        <h2 class="text-lg font-bold mb-4 text-slate-900 text-center">Student Results Lookup</h2>
+        <div class="space-y-3">
+          <input type="text" id="studentIdInput" placeholder="Enter Student ID (e.g. STU101)" class="w-full px-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" />
+          <button onclick="fetchStudentResults()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2 rounded-lg text-sm transition">View Results</button>
+        </div>
+      </div>
+
+      <div id="studentResultsContainer" class="hidden space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 id="studentHeader" class="text-xl font-bold text-slate-900">Academic Summary</h3>
+          <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition shadow-sm">📥 Export CSV</button>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+          <table class="w-full text-left border-collapse" id="resultsTable">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="py-3 px-4">Subject</th>
+                <th class="py-3 px-4">Test 1</th>
+                <th class="py-3 px-4">Test 2</th>
+                <th class="py-3 px-4">Test 3</th>
+                <th class="py-3 px-4">Mock</th>
+                <th class="py-3 px-4">Average</th>
+                <th class="py-3 px-4">Symbol</th>
+              </tr>
+            </thead>
+            <tbody id="studentResultsBody" class="divide-y divide-slate-100 text-sm"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="teacherView" class="hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm max-w-2xl mx-auto">
+        <h2 class="text-lg font-bold mb-4 text-slate-900">Enter Student Marks</h2>
+        <form id="marksForm" onsubmit="saveMarks(event)" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Student ID</label>
+              <input type="text" id="tStudentId" required placeholder="STU101" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Student Name</label>
+              <input type="text" id="tStudentName" required placeholder="John Doe" class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold mb-1">Subject</label>
+            <select id="tSubject" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+              <option>Mathematics</option>
+              <option>English Language</option>
+              <option>Biology</option>
+              <option>Physics</option>
+              <option>Chemistry</option>
+              <option>Computer Science</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 1 (%)</label>
+              <input type="number" id="t1" min="0" max="100" required class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 2 (%)</label>
+              <input type="number" id="t2" min="0" max="100" required class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Test 3 (%)</label>
+              <input type="number" id="t3" min="0" max="100" required class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold mb-1">Mock (%)</label>
+              <input type="number" id="tMock" min="0" max="100" required class="w-full px-3 py-2 border rounded-lg text-sm" />
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 rounded-lg text-sm transition">💾 Save Marks to Firebase</button>
+        </form>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, doc, setDoc, collection, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    // 1. PASTE YOUR FIREBASE CONFIGURATION HERE
+    const firebaseConfig = {
+     apiKey: "AIzaSyBYNcXsEVCSzCWQ3hVuXv5rIx2bo5uXsnA",
+  authDomain: "nssco-tracker.firebaseapp.com",
+  projectId: "nssco-tracker",
+  storageBucket: "nssco-tracker.firebasestorage.app",
+  messagingSenderId: "499531690070",
+  appId: "1:499531690070:web:bc956ffdbbc989f29e0bf7",
+  measurementId: "G-W0HFVRJNFT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Calculate NSSCO Symbol based on Average
+    function getSymbol(avg) {
+      if (avg >= 80) return { sym: 'A*', cls: 'bg-emerald-100 text-emerald-800' };
+      if (avg >= 70) return { sym: 'A', cls: 'bg-emerald-100 text-emerald-800' };
+      if (avg >= 60) return { sym: 'B', cls: 'bg-blue-100 text-blue-800' };
+      if (avg >= 50) return { sym: 'C', cls: 'bg-indigo-100 text-indigo-800' };
+      if (avg >= 40) return { sym: 'D', cls: 'bg-amber-100 text-amber-800' };
+      if (avg >= 30) return { sym: 'E', cls: 'bg-orange-100 text-orange-800' };
+      return { sym: 'U', cls: 'bg-red-100 text-red-800' };
+    }
+
+    // Save Marks to Firestore
+    window.saveMarks = async function(e) {
+      e.preventDefault();
+      const studentId = document.getElementById('tStudentId').value.trim().toUpperCase();
+      const studentName = document.getElementById('tStudentName').value.trim();
+      const subject = document.getElementById('tSubject').value;
+      const t1 = Number(document.getElementById('t1').value);
+      const t2 = Number(document.getElementById('t2').value);
+      const t3 = Number(document.getElementById('t3').value);
+      const mock = Number(document.getElementById('tMock').value);
+      
+      const avg = Number(((t1 + t2 + t3 + mock) / 4).toFixed(2));
+      const docId = `${studentId}_${subject.replace(/\s+/g, '')}`;
+
+      try {
+        await setDoc(doc(db, "marks", docId), {
+          studentId, studentName, subject, t1, t2, t3, mock, avg
+        });
+        alert(`Successfully saved marks for ${studentName} (${subject})`);
+        document.getElementById('marksForm').reset();
+      } catch (err) {
+        alert("Error saving data: " + err.message);
+      }
+    };
+
+    // Fetch Student Results
+    window.fetchStudentResults = async function() {
+      const studentId = document.getElementById('studentIdInput').value.trim().toUpperCase();
+      if (!studentId) return alert("Please enter a Student ID");
+
+      const q = query(collection(db, "marks"), where("studentId", "==", studentId));
+      const querySnapshot = await getDocs(q);
+
+      const tbody = document.getElementById('studentResultsBody');
+      tbody.innerHTML = '';
+
+      if (querySnapshot.empty) {
+        alert("No results found for ID: " + studentId);
+        return;
+      }
+
+      document.getElementById('studentResultsContainer').classList.remove('hidden');
+
+      querySnapshot.forEach((docSnap) => {
+        const d = docSnap.data();
+        const sym = getSymbol(d.avg);
+        document.getElementById('studentHeader').innerText = `Academic Summary: ${d.studentName} (${d.studentId})`;
+
+        const row = `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-semibold text-slate-900">${d.subject}</td>
+            <td class="py-3 px-4">${d.t1}%</td>
+            <td class="py-3 px-4">${d.t2}%</td>
+            <td class="py-3 px-4">${d.t3}%</td>
+            <td class="py-3 px-4">${d.mock}%</td>
+            <td class="py-3 px-4 font-bold text-slate-800">${d.avg}%</td>
+            <td class="py-3 px-4"><span class="${sym.cls} font-bold px-2.5 py-0.5 rounded text-xs">${sym.sym}</span></td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    };
+
+    // View Navigation Switcher
+    window.showView = function(viewId) {
+      document.getElementById('studentView').classList.add('hidden');
+      document.getElementById('teacherView').classList.add('hidden');
+      document.getElementById(viewId).classList.remove('hidden');
+    };
+
+    // Export Table Data to CSV
+    window.exportCSV = function() {
+      let csv = [];
+      let rows = document.querySelectorAll("#resultsTable tr");
+      for (let i = 0; i < rows.length; i++) {
+        let row = [], cols = rows[i].querySelectorAll("td, th");
+        for (let j = 0; j < cols.length; j++) row.push('"' + cols[j].innerText.trim() + '"');
+        csv.push(row.join(","));
+      }
+      let csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+      let link = document.createElement("a");
+      link.download = `Academic_Results.csv`;
+      link.href = window.URL.createObjectURL(csvFile);
+      link.click();
+    };
+  </script>
+</body>
+</html>
